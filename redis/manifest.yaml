@@ -58,9 +58,6 @@ spec:
       containers:
       - name: redis
         image: redis:7.0
-        ports:
-        - containerPort: 80
-          name: web
         volumeMounts:
         - name: redis
           mountPath: /data
