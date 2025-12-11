@@ -1,0 +1,76 @@
+#create  default service, headless service, statefulset(PVC template)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: roboshop
+spec:
+  selector:
+    component: redis
+    project: roboshop
+    tier: db
+  ports:
+    - protocol: TCP
+      port: 6379 #service port - clusterIPport
+      targetPort: 6379
+---
+#Headless service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+  namespace: roboshop
+spec:
+  clusterIP: None
+  selector:
+    component: redis
+    project: roboshop
+    tier: db
+  ports:
+    - protocol: TCP
+      port: 6379 #service port - clusterIPport
+      targetPort: 6379      
+---
+# Statefulset- just like deploymewnt
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: roboshop
+spec:
+  selector:
+    matchLabels:
+      component: redis
+      project: roboshop
+      tier: db
+  serviceName: "redis-headless" #this should be headless service name 
+  replicas: 1 # by default is 1
+  # minReadySeconds: 10 # by default is 0
+  template:
+    metadata:
+      labels:
+        component: redis
+        project: roboshop
+        tier: db
+    spec:
+      # terminationGracePeriodSeconds: 10
+      containers:
+      - name: redis
+        image: redis:7.0
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: redis
+          mountPath: /data
+          #PVC
+  volumeClaimTemplates:
+  - metadata:
+      name: redis
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: "roboshop-ebs"
+      resources:
+        requests:
+          storage: 1Gi    
